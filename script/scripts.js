@@ -32,8 +32,6 @@ const workerDolar = new Worker('./script/workers/workerDolar.js');
 workerDolar.postMessage('usd')
 
 workerDolar.addEventListener("message", (event) => {
-    console.log(
-    )
     const time = generateTime();
     const value = event.data.ask;
     printQuote(chartLabel, value);
