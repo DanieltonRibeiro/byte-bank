@@ -1,19 +1,28 @@
-import printQuote from './printQuote.js';
+import selectQuote from './printQuote.js';
 
 const dollarChart = document.getElementById('dollarChart');
-const chartLabel = "Dólar";
+const ieneChart = document.getElementById("ieneChart");
+const chartLabelDollar = "dolar";
+const chartLabelIene = "iene";
 
-const dollarToChart = new Chart(dollarChart, {
-    type: 'line',
-    data: {
-        labels: [],
-        datasets: [{
-            label: chartLabel,
-            data: [],
-            borderWidth: 1
-        }]
-    },
-});
+const dollarToChart = createChart({ elementSelected: dollarChart, label: chartLabelDollar });
+const ieneToChart = createChart({ elementSelected: ieneChart, label: chartLabelIene });
+
+function createChart({ elementSelected, label }){
+    return new Chart(elementSelected, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [
+                {
+                    label: label,
+                    data: [],
+                    borderWidth: 1
+                }
+            ]
+        },
+    })
+}
 
 function generateTime(){
     const date = new Date();
@@ -28,13 +37,25 @@ function addData(chart, label, data){
     chart.update();
 }
 
-const workerDolar = new Worker('./script/workers/workerDolar.js');
-workerDolar.postMessage('usd')
+function workerInstance({ path, message }){
+    const newWorker = new Worker(`./script/workers/${path}`);
+    newWorker.postMessage(message);
+    return newWorker;
+}
 
-workerDolar.addEventListener("message", (event) => {
-    const time = generateTime();
-    const value = event.data.ask;
-    printQuote(chartLabel, value);
-    addData(dollarToChart, time, value);
-})
+function workerMessageEvent({worker, chartlabel, currenctToChart}){
+    worker.addEventListener("message", (event) => {
+        const time = generateTime();
+        const value = event.data.ask;
+        selectQuote(chartlabel, value);
+        addData(currenctToChart, time, value);
+    })
+}
+
+const workerDolar = workerInstance({ path: 'workerDolar.js', message: 'usd' });
+const workerIene = workerInstance({ path: 'workerIene.js', message: 'iene' });
+
+workerMessageEvent({ worker: workerIene, chartlabel: chartLabelIene, currenctToChart: ieneToChart });
+workerMessageEvent({ worker: workerDolar, chartlabel: chartLabelDollar, currenctToChart: dollarToChart });
+
 
